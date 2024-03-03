@@ -1,40 +1,67 @@
-import { UserCreatePayload } from "@/database/schemas/users";
+import { db } from "@/database";
+import { UserCreatePayload, users } from "@/database/schemas/users";
 import { Repository } from "@/interfaces";
+import { drizzleFilterQuery } from "@/utils/drizzle-filter-query";
+import { count, eq } from "drizzle-orm";
 
 export class UserRepository implements Repository {
-  create(payload: UserCreatePayload) {
-    throw new Error("Method not implemented.");
+  async create(payload: UserCreatePayload) {
+    const rows = await db.insert(users).values(payload).returning();
+    return rows[0];
   }
 
-  delete(id: string) {
-    throw new Error("Method not implemented.");
+  async delete(id: string) {
+    return await db.delete(users).where(eq(users.id, id));
   }
 
-  update(id: string, payload: any) {
-    throw new Error("Method not implemented.");
+  async update(id: string, payload: any) {
+    const rows = await db.update(users).set(payload).where(eq(users.id, id));
+    return rows[0];
   }
 
-  findOne(filter: any) {
-    throw new Error("Method not implemented.");
+  async findOne(filter: any) {
+    const rows = await db
+      .select()
+      .from(users)
+      .where(drizzleFilterQuery(users, filter));
+    
+    return rows[0];
   }
 
-  find(filter: any) {
-    throw new Error("Method not implemented.");
+  async find(filter?: any) {
+    const rows = await db
+      .select()
+      .from(users)
+      .where(drizzleFilterQuery(users, filter));
+
+    return rows;
   }
 
-  findById(id: string) {
-    throw new Error("Method not implemented.");
+  async findById(id: string) {
+    return await this.findOne({ id });
   }
 
-  deleteMany(filter: any) {
-    throw new Error("Method not implemented.");
+  async deleteMany() {
+    const rows = await db.delete(users);
+    return rows;
   }
 
-  updateMany(filter: any, payload: any) {
-    throw new Error("Method not implemented.");
+  async updateMany(payload: any, filter?: any) {
+    const rows = await db
+      .update(users)
+      .set(payload)
+      .where(drizzleFilterQuery(users, filter));
+
+    return rows;
   }
 
-  count(filter: any) {
-    throw new Error("Method not implemented.");
+  async count() {
+    const rows = await db
+      .select({
+        value: count(),
+      })
+      .from(users);
+
+    return rows[0].value;
   }
 }

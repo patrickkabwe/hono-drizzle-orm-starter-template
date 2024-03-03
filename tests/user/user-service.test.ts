@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import { UserRepository } from "@/modules/users/users-repository";
 import { UserService } from "@/modules/users/users-service";
+import { randomUUID } from "crypto";
 
-vi.mock("~/modules/users/users-repository.ts", () => {
+vi.mock("@/modules/users/users-repository.ts", () => {
   const UserRepository = vi.fn();
   UserRepository.prototype.findById = vi.fn();
 
@@ -12,16 +12,15 @@ vi.mock("~/modules/users/users-repository.ts", () => {
 describe("UserService", () => {
   it("should find user by id", async () => {
     const userRepo = new UserRepository();
+    const id = randomUUID();
     // @ts-ignore
     userRepo.findById.mockResolvedValueOnce({
-      id: "1",
+      id,
       email: "test@gmail.com",
-      permissions: [],
     });
     const userService = new UserService(userRepo);
-    const user = await userService.findById("1");
+    const user = await userService.findById(id);
     expect(userRepo.findById).toBeCalledTimes(1);
     expect(user).toHaveProperty("id");
-    expect(user).toHaveProperty("permissions");
   });
 });

@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
 import { AuthService } from "@/modules/auth/auth-service";
 import { UserRepository } from "@/modules/users/users-repository";
+import { randomUUID } from "node:crypto";
 
 vi.mock("src/modules/users/users-repository.ts", () => {
   const UserRepository = vi.fn();
   UserRepository.prototype.findById = vi.fn();
+  UserRepository.prototype.findOne = vi.fn();
 
   return { UserRepository };
 });
@@ -17,18 +18,18 @@ describe("AuthService", () => {
     };
     const userRepo = new UserRepository();
     // @ts-ignore
-    userRepo.findById.mockResolvedValueOnce({
-      id: "1",
+    userRepo.findOne.mockResolvedValueOnce({
+      id: randomUUID(),
       email: "test@gmai.com",
-      permissions: [],
+      password: "$2b$10$5Uob16O9vPKhh6Gqx.yseu9MFNsxx.6U56YWtcFfv1zWcAhEqdzsm",
     });
     const authService = new AuthService(userRepo);
 
     const user = await authService.loginUser(data);
 
-    expect(userRepo.findById).toBeCalledTimes(1);
+    expect(userRepo.findOne).toBeCalledTimes(1);
     expect(user).toHaveProperty("id");
-    expect(user).toHaveProperty("permissions");
+    expect(user).not.toHaveProperty("password");
   });
 
   it("should not return user for invalid email and password", async () => {
@@ -41,7 +42,6 @@ describe("AuthService", () => {
     userRepo.findById.mockResolvedValueOnce({
       id: "1",
       email: "test@gmai.com",
-      permissions: [],
     });
     const authService = new AuthService(userRepo);
 

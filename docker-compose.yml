@@ -1,0 +1,31 @@
+version: '3.9'
+
+# Service - node js
+services:
+  backend-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - backend-network
+  db:
+    image: postgres:lastest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
+# Network
+networks:
+  backend-network:
+    driver: bridge

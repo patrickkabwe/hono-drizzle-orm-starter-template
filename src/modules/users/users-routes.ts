@@ -13,6 +13,6 @@ const userRepo = new UserRepository();
 const employeeService = new UserService(userRepo);
 const userHandlers = new UserHandler(employeeService);
 
-userRouter.get(":id", userHandlers.getMe);
+userRouter.get("me", userHandlers.getMe);
 
 export { userRouter };

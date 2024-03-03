@@ -4,13 +4,10 @@ type PaginatedResponseCreatorOption = {
   totalCount?: number;
 };
 
-type ErrorResponse = {
-  errors?: any;
-};
-
 interface ResponseCreator {
   success: boolean;
-  data?: ErrorResponse | any;
+  data?: any;
+  error?: any;
 }
 
 export const paginatedResponseCreator = (
@@ -34,5 +31,6 @@ export const responseCreator = (response: ResponseCreator) => {
   return {
     success: response.success,
     data: response.data,
+    error: response.error,
   };
 };

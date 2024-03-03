@@ -1,23 +1,17 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { HTTPException } from "hono/http-exception";
-import { logger as honoLogger } from "hono/logger";
+import { config } from "dotenv";
+config();
 
-import { showRoutes } from "hono/dev";
-import { secureHeaders } from "hono/secure-headers";
-import pinoLogger from "pino";
 import { ServiceException } from "@/exceptions";
 import { authMiddleware } from "@/middleware/auth-middleware";
 import { authRouter } from "@/modules/auth/auth-routes";
 import { userRouter } from "@/modules/users/users-routes";
-
-const logger = pinoLogger({
-  msgPrefix: "[App]: ",
-  redact: {
-    paths: ["hostname", "pid", "level"],
-    remove: true,
-  },
-});
+import { responseCreator } from "@/utils/responseCreator";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { showRoutes } from "hono/dev";
+import { HTTPException } from "hono/http-exception";
+import { logger as honoLogger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 
 const app = new Hono().basePath("/api/v1/");
 
@@ -42,8 +36,8 @@ app.use("*", authMiddleware);
 app.route("users", userRouter);
 
 app.onError((error, ctx) => {
-  logger.error(error);
-
+  console.log({ error });
+  
   if (error instanceof HTTPException) {
     if (error.status !== 500) {
       return ctx.json(
@@ -52,9 +46,27 @@ app.onError((error, ctx) => {
       );
     }
   } else if (error instanceof ServiceException) {
-    return ctx.json({ message: error.message, status: 400 }, 400);
+    return ctx.json(
+      responseCreator({
+        success: false,
+        error: {
+          code: "SERVICE_ERROR",
+          message: error.message,
+        },
+      }),
+      400
+    );
   }
-  return ctx.json({ message: error.message, status: 500 }, 500);
+  return ctx.json(
+    responseCreator({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Internal server error",
+      },
+    }),
+    500
+  );
 });
 
 if (process.env.NODE_ENV === "development") {

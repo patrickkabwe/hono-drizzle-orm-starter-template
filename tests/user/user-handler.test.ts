@@ -1,64 +1,86 @@
-import { beforeEach, describe, it, vi } from "vitest";
 import app from "@/app";
-import { UserService } from "@/modules/users/users-service";
+import { AuthService } from "@/modules/auth/auth-service";
+import { UserRepository } from "@/modules/users/users-repository";
+import { randomUUID } from "crypto";
 
-vi.mock("@/modules/users/users-service", () => {
-  const UserService = vi.fn();
-  UserService.prototype.findById = vi.fn();
+vi.mock("@/modules/auth/auth-service", () => {
+  const AuthService = vi.fn();
+  AuthService.prototype.loginUser = vi.fn();
 
-  return { UserService };
+  return { AuthService };
 });
 
-let userService: UserService;
+vi.mock("@/modules/users/users-repository.ts", () => {
+  const UserRepository = vi.fn();
+  UserRepository.prototype.findById = vi.fn();
+
+  return { UserRepository };
+});
+
+let authService: AuthService;
 
 beforeEach(() => {
   const user = {
     email: "test@gmail.com",
   };
   const userRepo = {
-    findById: vi.fn((id: string) =>
+    findOne: vi.fn((id: string) =>
       Promise.resolve({
         id,
         ...user,
       })
     ),
   };
-  userService = new UserService(userRepo as any);
+  authService = new AuthService(userRepo as any);
 });
 
 describe("UserHandler", () => {
   it("GET /me", async () => {
+    const userId = randomUUID();
+    const userRepo = new UserRepository();
     // @ts-ignore
-    userService.findById.mockResolvedValueOnce({
-      id: "1",
+    authService.loginUser.mockResolvedValueOnce({
+      id: userId,
       email: "test@gmail.com",
-      permissions: [],
+      password: "$2b$10$5Uob16O9vPKhh6Gqx.yseu9MFNsxx.6U56YWtcFfv1zWcAhEqdzsm",
     });
 
     // @ts-ignore
-    userService.findById.mockResolvedValueOnce({
-      id: "1",
+    userRepo.findById.mockResolvedValueOnce({
+      id: userId,
       email: "test@gmail.com",
-      permissions: [],
+      password: "$2b$10$5Uob16O9vPKhh6Gqx.yseu9MFNsxx.6U56YWtcFfv1zWcAhEqdzsm",
     });
 
-    const loginRes = await app.request("api/v1/auth/login", {
+    const reqHeaders = new Headers();
+    reqHeaders.append("Content-Type", "application/json");
+    // include cors headers from client
+    reqHeaders.append("Origin", "http://localhost:3000");
+    reqHeaders.append("Access-Control-Allow-Origin", "http://localhost:3000");
+    reqHeaders.append("Access-Control-Allow-Credentials", "true");
+
+    const req = new Request("http://localhost:5100/api/v1/auth/login", {
       method: "POST",
       body: JSON.stringify({
         email: "test@gmail.com",
         password: "test",
       }),
+      headers: reqHeaders,
     });
+    const loginRes = await app.request(req);
 
     const headers = await loginRes.headers;
 
-    const res = await app.request("/api/v1/users/me", {
-      headers,
+    const combinedHeaders = headers;
+    combinedHeaders.set("cookie", headers.get("set-cookie") as string);
+
+    const res = await app.request("http://localhost:5100/api/v1/users/me", {
+      headers: combinedHeaders,
     });
 
     const jsonRes = await res.json();
 
-    // expect(res.status).toBe(200);
+    expect(res.status).toBe(200);
     // expect(jsonRes).toHaveProperty("id");
     // expect(jsonRes).toHaveProperty("permissions");
     // expect(Array.isArray(jsonRes.permissions)).toBeTruthy();

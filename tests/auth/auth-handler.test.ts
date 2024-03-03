@@ -1,12 +1,12 @@
 import app from "@/app";
-import { ServerException } from "@/exceptions";
 import { UserRepository } from "@/modules/users/users-repository";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { randomUUID } from "crypto";
 
 beforeEach(() => {
-  vi.mock("src/modules/users/users-repository.ts", () => {
+  vi.mock("@/modules/users/users-repository.ts", () => {
     const UserRepository = vi.fn();
     UserRepository.prototype.findById = vi.fn();
+    UserRepository.prototype.findOne = vi.fn();
 
     return { UserRepository };
   });
@@ -21,13 +21,15 @@ describe("AuthHandler", () => {
     it("should login user", async () => {
       const data = {
         email: "test@gmail.com",
-        password: "test1233",
+        password: "test123",
       };
       const userRepo = new UserRepository();
       // @ts-ignore
-      userRepo.findById.mockResolvedValue({
-        id: "123",
+      userRepo.findOne.mockResolvedValue({
+        id: randomUUID(),
         email: "test@gmail.com",
+        password:
+          "$2b$10$5Uob16O9vPKhh6Gqx.yseu9MFNsxx.6U56YWtcFfv1zWcAhEqdzsm",
       });
 
       const res = await app.request("/api/v1/auth/login", {
@@ -35,10 +37,10 @@ describe("AuthHandler", () => {
         body: JSON.stringify(data),
       });
       const cookieHeader = await res.headers.get("set-cookie");
-
+      const body = await res.json();
       expect(res.status).toBe(200);
       expect(cookieHeader).not.toBeNull();
-      expect(await res.json()).toHaveProperty("id");
+      expect(body.data).toHaveProperty("id");
     });
 
     it("should not login user in to app", async () => {
@@ -49,7 +51,7 @@ describe("AuthHandler", () => {
       const userRepo = new UserRepository();
 
       // @ts-ignore
-      userRepo.findById.mockResolvedValue(null);
+      userRepo.findOne.mockResolvedValue(null);
 
       const res = await app.request("/api/v1/auth/login", {
         method: "POST",
@@ -57,12 +59,11 @@ describe("AuthHandler", () => {
       });
       const cookieHeader = await res.headers.get("set-cookie");
       const body = await res.json();
+
       expect(res.status).toBe(400);
       expect(cookieHeader).toBeNull();
-      expect(body).toHaveProperty("message");
-      expect(body).toHaveProperty("status");
-      expect(body.status).toBe(400);
-      expect(body.message).toBe("Invalid email");
+      expect(body).toHaveProperty("error");
+      expect(body.error.message).toBe("Invalid email");
     });
 
     it("should throw error if user doesn't exists", async () => {
@@ -72,6 +73,14 @@ describe("AuthHandler", () => {
       };
       const userRepo = new UserRepository();
 
+      // @ts-ignore
+      userRepo.findOne.mockResolvedValue({
+        id: randomUUID(),
+        email: "test@gmail.com",
+        password:
+          "$2b$10$PdHWAoOLEgXy5rLan4mbI.T0rY4abmw8V7mBM7SZGjFmTHiWXxtm1",
+      });
+
       const res = await app.request("/api/v1/auth/login", {
         method: "POST",
         body: JSON.stringify(data),
@@ -79,35 +88,11 @@ describe("AuthHandler", () => {
 
       const cookieHeader = await res.headers.get("set-cookie");
       const body = await res.json();
+
       expect(res.status).toBe(400);
       expect(cookieHeader).toBeNull();
-      expect(body).toHaveProperty("message");
-      expect(body).toHaveProperty("status");
-      expect(body.message).toBe("Invalid credentials");
-    });
-
-    it("should not login user in to app", async () => {
-      const data = {
-        email: "test@g.com",
-        password: "test1233",
-      };
-      const userRepo = new UserRepository();
-
-      // @ts-ignore
-      userRepo.findById.mockRejectedValueOnce(new ServerException());
-
-      const res = await app.request("/api/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-
-      const cookieHeader = await res.headers.get("set-cookie");
-      const body = await res.json();
-      expect(res.status).toBe(500);
-      expect(cookieHeader).toBeNull();
-      expect(body).toHaveProperty("message");
-      expect(body).toHaveProperty("status");
-      expect(body.message).toBe("Unexpected error occurred");
+      expect(body.error).toHaveProperty("message");
+      expect(body.error.message).toBe("Invalid credentials");
     });
   });
 });

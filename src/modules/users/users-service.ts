@@ -7,7 +7,12 @@ export class UserService implements Service {
   constructor(public userRepo: UserRepository) {}
 
   async create(payload: UserCreatePayload) {
-    throw new Error("Method not implemented.");
+    try {
+      const employee = await this.userRepo.create(payload);
+      return employee;
+    } catch (error) {
+      throw errorHandler(error);
+    }
   }
 
   async update(userId: string, payload: UserCreatePayload) {
@@ -29,7 +34,12 @@ export class UserService implements Service {
   }
 
   async findById(userId: string) {
-    throw new Error("Method not implemented.");
+    try {
+      const employee = await this.userRepo.findById(userId);
+      return employee;
+    } catch (error) {
+      throw errorHandler(error);
+    }
   }
 
   async checkExists(userId: string) {

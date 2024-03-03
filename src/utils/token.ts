@@ -6,12 +6,12 @@ interface JWTPayload extends jose.JWTPayload {
 }
 
 const secretKey = createSecretKey(
-  new TextEncoder().encode(process.env.JWTSecret)
+  new TextEncoder().encode(process.env.JWT_SECRET)
 );
 
 export const createJWTToken = async (payload: JWTPayload) => {
   const token = await new jose.SignJWT(payload)
-    .setProtectedHeader({ alg: process.env.JWT_ALGORITHM as string })
+    .setProtectedHeader({ alg: process.env.JWT_ALGORITHM ?? "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(secretKey);

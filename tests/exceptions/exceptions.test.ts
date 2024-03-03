@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import { ServerException, ServiceException } from "@/exceptions";
 
 describe("ServiceException", () => {

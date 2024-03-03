@@ -23,15 +23,16 @@ export class AuthHandler {
 
   login = async (c: Context) => {
     const data = await c.req.json<UserLoginPayload>();
-    const user = (await this.authService.loginUser(data)) as any;
+    const user = await this.authService.loginUser(data);
     const token = await createJWTToken({ uid: user.id });
 
     setCookie(c, TOKEN_KEY, token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "None",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Lax",
       maxAge: 60 * 60 * 24 * 7,
     });
+
     return c.json(
       responseCreator({
         success: true,

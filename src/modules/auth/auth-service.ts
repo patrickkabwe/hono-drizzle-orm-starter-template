@@ -1,10 +1,13 @@
 import {
   UserCreatePayload,
   UserLoginPayload,
+  insertUserSchema,
   loginUserSchema,
 } from "@/database/schemas/users";
+import { ServiceException } from "@/exceptions";
 import { UserRepository } from "@/modules/users/users-repository";
 import { errorHandler } from "@/utils/errorHandler";
+import { compare, hash } from "bcrypt";
 
 export class AuthService {
   constructor(private repo: UserRepository) {}
@@ -12,19 +15,41 @@ export class AuthService {
   async loginUser(data: UserLoginPayload) {
     try {
       const cleanedData = await loginUserSchema.parseAsync(data);
+
       const user = await this.repo.findOne({
-        user: {
-          workEmail: cleanedData.email,
-        },
+        email: cleanedData.email,
       });
+
+      if (!user) {
+        throw new ServiceException("Invalid credentials");
+      }
+
+      const isPasswordValid = await this.comparePassword(
+        cleanedData.password,
+        user.password
+      );
+
+      if (!isPasswordValid) {
+        throw new ServiceException("Invalid credentials");
+      }
+
+      // @ts-ignore
+      delete user.password;
+
       return user;
     } catch (error) {
-      throw errorHandler(error, "Invalid credentials");
+      throw errorHandler(error);
     }
   }
 
   async register(data: UserCreatePayload) {
-    throw new Error("Method not implemented.");
+    try {
+      const cleanedData = await insertUserSchema.parseAsync(data);
+      const user = await this.repo.create(cleanedData);
+      return user;
+    } catch (error) {
+      throw errorHandler(error, "User already exists");
+    }
   }
 
   async verifyUser(profileId: string) {
@@ -38,5 +63,13 @@ export class AuthService {
 
   async refreshToken(token: string | undefined) {
     throw new Error("Method not implemented.");
+  }
+
+  async hashPassword(password: string) {
+    return await hash(password, 10);
+  }
+
+  async comparePassword(password: string, hashedPassword: string) {
+    return await compare(password, hashedPassword);
   }
 }

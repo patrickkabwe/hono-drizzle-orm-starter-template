@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { createJWTToken, decodeJWTToken, verifyJWTToken } from "@/utils/token";
+import { describe, expect, it } from "vitest";
 
 describe("createJWTToken", () => {
   it("should return a string", async () => {
