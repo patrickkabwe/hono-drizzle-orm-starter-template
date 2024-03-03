@@ -1,5 +1,5 @@
 import { db } from "@/database";
-import { UserCreatePayload, users } from "@/database/schemas/users";
+import { User, UserCreatePayload, users } from "@/database/schemas/users";
 import { Repository } from "@/interfaces";
 import { drizzleFilterQuery } from "@/utils/drizzle-filter-query";
 import { count, eq } from "drizzle-orm";
@@ -19,16 +19,16 @@ export class UserRepository implements Repository {
     return rows[0];
   }
 
-  async findOne(filter: any) {
+  async findOne(filter?: Partial<User>) {
     const rows = await db
       .select()
       .from(users)
       .where(drizzleFilterQuery(users, filter));
-    
+
     return rows[0];
   }
 
-  async find(filter?: any) {
+  async find(filter?: Partial<User>) {
     const rows = await db
       .select()
       .from(users)
@@ -39,6 +39,15 @@ export class UserRepository implements Repository {
 
   async findById(id: string) {
     return await this.findOne({ id });
+  }
+
+  async exists(filter?: Partial<User>) {
+    const rows = await db
+      .select()
+      .from(users)
+      .where(drizzleFilterQuery(users, filter))
+
+    return rows[0]
   }
 
   async deleteMany() {

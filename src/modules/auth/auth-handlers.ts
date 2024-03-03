@@ -13,6 +13,15 @@ export class AuthHandler {
   register = async (c: Context) => {
     const data = await c.req.json<UserCreatePayload>();
     const user = await this.authService.register(data);
+    const token = await createJWTToken({ uid: user.id });
+
+    setCookie(c, TOKEN_KEY, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
     return c.json(
       responseCreator({
         success: true,
@@ -29,7 +38,7 @@ export class AuthHandler {
     setCookie(c, TOKEN_KEY, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 60 * 60 * 24 * 7,
     });
 
@@ -45,10 +54,18 @@ export class AuthHandler {
     setCookie(c, TOKEN_KEY, "", {
       httpOnly: true,
       secure: true,
-      sameSite: "None",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 60 * 60 * 24 * 7,
     });
     return c.json(responseCreator({ success: true }));
+  };
+
+  google = async (c: ServerContext) => {
+    throw new Error("Not implemented");
+  };
+
+  github = async (c: ServerContext) => {
+    throw new Error("Not implemented");
   };
 
   refreshToken = async (c: ServerContext) => {

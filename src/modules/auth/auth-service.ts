@@ -7,7 +7,7 @@ import {
 import { ServiceException } from "@/exceptions";
 import { UserRepository } from "@/modules/users/users-repository";
 import { errorHandler } from "@/utils/errorHandler";
-import { compare, hash } from "bcrypt";
+import { compare, hash } from "bcrypt-ts";
 
 export class AuthService {
   constructor(private repo: UserRepository) {}
@@ -45,10 +45,20 @@ export class AuthService {
   async register(data: UserCreatePayload) {
     try {
       const cleanedData = await insertUserSchema.parseAsync(data);
+      const userExists = await this.repo.exists({
+        email: cleanedData.email,
+      });
+      if (userExists) {
+        throw new ServiceException("User already exists");
+      }
+
+      cleanedData.password = await this.hashPassword(cleanedData.password);
+
       const user = await this.repo.create(cleanedData);
+
       return user;
     } catch (error) {
-      throw errorHandler(error, "User already exists");
+      throw errorHandler(error);
     }
   }
 
