@@ -48,6 +48,7 @@ export class AuthService {
       const userExists = await this.repo.exists({
         email: cleanedData.email,
       });
+
       if (userExists) {
         throw new ServiceException("User already exists");
       }
@@ -55,8 +56,6 @@ export class AuthService {
       cleanedData.password = await this.hashPassword(cleanedData.password);
 
       const user = await this.repo.create(cleanedData);
-      // @ts-ignore
-      delete user.password;
 
       return user;
     } catch (error) {

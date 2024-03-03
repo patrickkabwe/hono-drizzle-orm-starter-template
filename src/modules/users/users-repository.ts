@@ -6,7 +6,14 @@ import { count, eq } from "drizzle-orm";
 
 export class UserRepository implements Repository {
   async create(payload: UserCreatePayload) {
-    const rows = await db.insert(users).values(payload).returning();
+    const rows = await db.insert(users).values(payload).returning({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      last_name: users.lastName,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    });
     return rows[0];
   }
 
