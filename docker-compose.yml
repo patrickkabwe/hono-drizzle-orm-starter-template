@@ -1,6 +1,5 @@
-version: '3.9'
+version: "3.9"
 
-# Service - node js
 services:
   backend-api:
     build:
@@ -25,7 +24,6 @@ services:
     networks:
       - backend-network
 
-# Network
 networks:
   backend-network:
     driver: bridge
