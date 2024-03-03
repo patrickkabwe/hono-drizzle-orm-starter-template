@@ -8,7 +8,6 @@ export const errorHandler = (error: unknown, message?: string) => {
   } else if (error) {
     throw new ServiceException(message || (error as any)?.message);
   } else {
-    console.log({ ERROR: error });
     throw new ServerException();
   }
 };

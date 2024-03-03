@@ -36,8 +36,6 @@ app.use("*", authMiddleware);
 app.route("users", userRouter);
 
 app.onError((error, ctx) => {
-  console.log({ error });
-  
   if (error instanceof HTTPException) {
     if (error.status !== 500) {
       return ctx.json(
